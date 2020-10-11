@@ -1,58 +1,8 @@
-import 'dart:convert';
 import 'package:movies_app/genres.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import '../api/search_results_api.dart';
 
-
-Future getSearchResultsMovie(String userInput) async{
-  http.Response response=await http.get('https://api.themoviedb.org/3/search/movie?api_key=5a945992366721e6b76a83e296616bf8&query=$userInput&page=1');
-
-  if(response.statusCode==200){
-    movies=jsonDecode(response.body);
-  }else{
-    print(response.statusCode);
-  }
-
-}
-
-Future getSearchResultsTv(String userInput) async{
-  http.Response response=await http.get('https://api.themoviedb.org/3/search/tv?api_key=5a945992366721e6b76a83e296616bf8&query=$userInput&page=1');
-
-  if(response.statusCode==200){
-    tvSeries=jsonDecode(response.body);
-  }else{
-    print(response.statusCode);
-  }
-}
-
-Future getMovieDetails(String id) async {
-  http.Response response = await http.get(
-      'https://api.themoviedb.org/3/movie/$id?api_key=5a945992366721e6b76a83e296616bf8&language=en-US');
-  if (response.statusCode == 200) {
-    movieDetails = jsonDecode(response.body);
-  } else {
-    print(response.statusCode);
-  }
-}
-
-Future getTvSeriesDetails(String id) async {
-  http.Response response = await http.get(
-      'https://api.themoviedb.org/3/tv/$id?api_key=5a945992366721e6b76a83e296616bf8&language=en-US');
-  if (response.statusCode == 200) {
-    tvSeriesDetails = jsonDecode(response.body);
-  } else {
-    print(response.statusCode);
-  }
-}
-
-String userInput;
-Map<String, dynamic> movies;
-Map<String, dynamic> tvSeries;
-Map<String, dynamic> movieDetails;
-Map<String, dynamic> tvSeriesDetails;
-Future response;
-Future response1;
 
 class Results extends StatefulWidget {
   @override

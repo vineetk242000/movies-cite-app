@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:movies_app/main.dart';
+import '../api/about_movie_api.dart';
 
 class About extends StatefulWidget {
   @override
@@ -10,60 +8,13 @@ class About extends StatefulWidget {
 }
 
 class _AboutState extends State<About> {
-  Map<String, dynamic> movieData;
-  Map<String, dynamic> crewData;
-  Map<String, dynamic> movieImages;
-  Map<String, dynamic> recommendations;
-  Map<String, dynamic> recommendedMovieDetails;
-  Future responseStatus;
-  Future responseStatus1;
-  Future responseStatus3;
-
-  Future getCastAndCrew(String id) async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/movie/$id/credits?api_key=5a945992366721e6b76a83e296616bf8');
-    if (response.statusCode == 200) {
-      crewData = jsonDecode(response.body);
-    } else {
-      print(response.statusCode);
-    }
-  }
-
-  Future getMovieImages(String id) async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/movie/$id/images?api_key=5a945992366721e6b76a83e296616bf8');
-    if (response.statusCode == 200) {
-      movieImages = jsonDecode(response.body);
-    } else {
-      print(response.statusCode);
-    }
-  }
-
-  Future getRecommendedMovies(String id) async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/movie/$id/recommendations?api_key=5a945992366721e6b76a83e296616bf8&language=en-US&page=1');
-    if (response.statusCode == 200) {
-      recommendations = jsonDecode(response.body);
-    } else {
-      print(response.statusCode);
-    }
-  }
-
-  Future getRecommendedMovieDetails(String id) async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/movie/$id?api_key=5a945992366721e6b76a83e296616bf8&language=en-US');
-    if (response.statusCode == 200) {
-      recommendedMovieDetails = jsonDecode(response.body);
-    } else {
-      print(response.statusCode);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final Map arguments = ModalRoute.of(context).settings.arguments as Map;
-
-    if (arguments != null) movieData = arguments;
+    setState(() {
+      if (arguments != null) movieData = arguments;
+    });
     responseStatus = getCastAndCrew(movieData['id'].toString());
     responseStatus1 = getMovieImages(movieData['id'].toString());
     responseStatus3 = getRecommendedMovies(movieData['id'].toString());
@@ -179,7 +130,7 @@ class _AboutState extends State<About> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          for (var i = 0; i < movieData['genres'].length; i++)
+                          for (var i = 0; i < movieData['genres'].length && i<3; i++)
                             Container(
                               margin: EdgeInsets.only(right: 10.0),
                               clipBehavior: Clip.none,
@@ -418,8 +369,8 @@ class _AboutState extends State<About> {
                                 i++)
                                   GestureDetector(
                                     onTap: () async{
-                                     await getRecommendedMovies(recommendations['results'][i]['id']);
-                                      Navigator.pushNamed(context, '/about',arguments: recommendedMovieDetails);
+                                     await getRecommendedMovieDetails(recommendations['results'][i]['id'].toString());
+                                     Navigator.pushReplacementNamed(context, '/about',arguments: recommendedMovieDetails);
                                     },
                                     child: Container(
                                       width: 140.0,

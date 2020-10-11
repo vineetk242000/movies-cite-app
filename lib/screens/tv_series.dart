@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:movies_app/genres.dart';
+import 'package:flutter/rendering.dart';
+import '../api/tv_series_api.dart';
+import 'dart:async';
 
+
+
+int pageNumber=1;
 
 class WebSeries extends StatefulWidget {
   @override
@@ -12,52 +16,42 @@ class WebSeries extends StatefulWidget {
 }
 
 class _WebSeriesState extends State<WebSeries> {
-  Map<String, dynamic> popularTvSeriesList;
-  Map<String, dynamic> tvSeriesDetails;
-  Map<String, dynamic> nowPlayingTvSeries;
-  List<Map> carouselImages = [];
+  ScrollController _controller;
+  bool scrollDetected=false;
+  Timer timer;
 
-  Future getPopularTvSeries() async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/tv/popular?api_key=5a945992366721e6b76a83e296616bf8&language=en-US&page=1');
-    if (response.statusCode == 200) {
-      popularTvSeriesList = jsonDecode(response.body);
-    } else {
-      print(response.statusCode);
+  _scrollListener() {
+    if (_controller.offset >= _controller.position.maxScrollExtent &&
+        !_controller.position.outOfRange) {
+      //print("reached bottom");
+      timer = new Timer(const Duration(seconds:1),(){
+        setState(() {
+          pageNumber++;
+        });
+      });
+    }
+
+    if (_controller.offset <= _controller.position.minScrollExtent &&
+        !_controller.position.outOfRange) {
+      setState(() {
+        scrollDetected=false;
+      });
+    }
+
+    if (_controller.position.userScrollDirection ==
+        ScrollDirection.reverse){
+      scrollDetected=true;
+
     }
   }
 
-  Future getTvSeriesDetails(String id) async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/tv/$id?api_key=5a945992366721e6b76a83e296616bf8&language=en-US');
-    if (response.statusCode == 200) {
-      tvSeriesDetails = jsonDecode(response.body);
-    } else {
-      print(response.statusCode);
-    }
-  }
-
-  Future getNowPlayingTvSeries() async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/tv/on_the_air?api_key=5a945992366721e6b76a83e296616bf8&language=en-US&page=1');
-    if (response.statusCode == 200) {
-      nowPlayingTvSeries = jsonDecode(response.body);
-      carouselImages = [
-        for(var i=0;i<nowPlayingTvSeries['results'].length;i++)
-        {
-          'path':'${nowPlayingTvSeries['results'][i]['poster_path']}',
-          'id':'${nowPlayingTvSeries['results'][i]['id']}',
-        },
-      ];
-    } else {
-      print(response.statusCode);
-    }
-  }
 
 
   @override
   void initState() {
     getPopularTvSeries();
+    _controller = ScrollController();
+    _controller.addListener(_scrollListener);
     super.initState();
   }
 
@@ -70,57 +64,60 @@ class _WebSeriesState extends State<WebSeries> {
           padding: const EdgeInsets.only(left: 8.0, right: 8.0),
           child: Column(
             children: [
-              FutureBuilder(
-                  future: getNowPlayingTvSeries(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.done) {
-                      return CarouselSlider(
-                          options: CarouselOptions(
-                            autoPlay: true,
-                            reverse: true,
-                            enlargeCenterPage: true,
-                            autoPlayInterval: Duration(seconds: 3),
-                            height: 250,
-                          ),
-                          items: carouselImages
-                              .map(
-                                (i) => GestureDetector(
-                              onTap: () async{
-                                await getTvSeriesDetails(i['id']);
-                                Navigator.pushNamed(context, '/seriesDetails',arguments: tvSeriesDetails);
-                              },
-                              child: Container(
-                                height: 200.0,
-                                width: 350.0,
-                                margin: EdgeInsets.only(left:10.0,right:10.0,bottom: 30.0),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(20.0),
-                                  child: Image.network(
-                                    'https://image.tmdb.org/t/p/w1280/${i['path']}',
-                                    height: 200.0,
-                                    width: 350.0,
-                                    fit: BoxFit.fill,
+              Container(
+                child: scrollDetected?Container():FutureBuilder(
+                    future: getNowPlayingTvSeries(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done) {
+                        return CarouselSlider(
+                            options: CarouselOptions(
+                              autoPlay: true,
+                              reverse: true,
+                              enlargeCenterPage: true,
+                              autoPlayInterval: Duration(seconds: 3),
+                              height: 250,
+                            ),
+                            items: carouselImages
+                                .map(
+                                  (i) => GestureDetector(
+                                onTap: () async{
+                                  await getTvSeriesDetails(i['id']);
+                                  Navigator.pushNamed(context, '/seriesDetails',arguments: tvSeriesDetails);
+                                },
+                                child: Container(
+                                  height: 200.0,
+                                  width: 350.0,
+                                  margin: EdgeInsets.only(left:10.0,right:10.0,bottom: 30.0),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(20.0),
+                                    child: Image.network(
+                                      'https://image.tmdb.org/t/p/w1280/${i['path']}',
+                                      height: 200.0,
+                                      width: 350.0,
+                                      fit: BoxFit.fill,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          )
-                              .toList());
-                    }
-                    return Center(
-                      child: SizedBox(
-                        height: 50.0,
-                        width: 50.0,
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  }),
+                            )
+                                .toList());
+                      }
+                      return Center(
+                        child: SizedBox(
+                          height: 50.0,
+                          width: 50.0,
+                          child: Container(),
+                        ),
+                      );
+                    }),
+              ),
               FutureBuilder(
                   future: getPopularTvSeries(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.done) {
                       return Expanded(
                         child: ListView(
+                          controller: _controller,
                           scrollDirection: Axis.vertical,
                           physics: BouncingScrollPhysics(),
                           children: [
@@ -241,8 +238,8 @@ class _WebSeriesState extends State<WebSeries> {
                     }
                     return Center(
                         child: SizedBox(
-                            height: 100.0,
-                            width: 100.0,
+                            height: 50.0,
+                            width: 50.0,
                             child: CircularProgressIndicator()));
                   })
             ],

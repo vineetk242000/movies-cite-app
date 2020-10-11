@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import '../api/about_tv_series_api.dart';
 
 class TvSeriesDetails extends StatefulWidget {
   @override
@@ -9,44 +8,6 @@ class TvSeriesDetails extends StatefulWidget {
 }
 
 class _TvSeriesDetailsState extends State<TvSeriesDetails> {
-
-  Map<String, dynamic> tvSeriesData;
-  Map<String, dynamic> crewData;
-  Map<String, dynamic> images;
-  Map<String, dynamic> recommendations;
-  Future responseStatus;
-  Future responseStatus1;
-  Future responseStatus3;
-
-  Future getCastAndCrew(String id) async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/tv/$id/credits?api_key=5a945992366721e6b76a83e296616bf8');
-    if (response.statusCode == 200) {
-      crewData = jsonDecode(response.body);
-    } else {
-      print(response.statusCode);
-    }
-  }
-
-  Future getImages(String id) async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/tv/$id/images?api_key=5a945992366721e6b76a83e296616bf8');
-    if (response.statusCode == 200) {
-      images = jsonDecode(response.body);
-    } else {
-      print(response.statusCode);
-    }
-  }
-
-  Future getRecommendedTvSeries(String id) async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/tv/$id/recommendations?api_key=5a945992366721e6b76a83e296616bf8&language=en-US&page=1');
-    if (response.statusCode == 200) {
-      recommendations = jsonDecode(response.body);
-    } else {
-      print(response.statusCode);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +128,7 @@ class _TvSeriesDetailsState extends State<TvSeriesDetails> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          for (var i = 0; i < tvSeriesData['genres'].length; i++)
+                          for (var i = 0; i < tvSeriesData['genres'].length && i<3; i++)
                             Flexible(
                               fit: FlexFit.loose,
                               child: Container(
@@ -405,7 +366,8 @@ class _TvSeriesDetailsState extends State<TvSeriesDetails> {
                                 i++)
                                   GestureDetector(
                                     onTap: () async{
-                                      await getRecommendedTvSeries(recommendations['results'][i]['id']);
+                                      await getRecommendedTvSeriesDetails(recommendations['results'][i]['id'].toString());
+                                      Navigator.pushReplacementNamed(context, '/seriesDetails',arguments: recommendedTvSeriesDetails);
                                     },
                                     child: Container(
                                       width: 140.0,

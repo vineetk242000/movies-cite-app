@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:movies_app/screens/dashboard.dart';
 import 'package:movies_app/screens/movies.dart';
-import 'package:movies_app/screens/web_series.dart';
+import 'package:movies_app/screens/tv_series.dart';
 
 class Home extends StatefulWidget {
   @override

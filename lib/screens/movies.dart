@@ -1,13 +1,14 @@
-import 'dart:io';
-
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:movies_app/genres.dart';
-import 'package:movies_app/main.dart';
+import 'dart:async';
+
+import '../api/movies_api.dart';
+import '../widgets/carousel.dart';
+
+int pageNumber=1;
 
 class Movies extends StatefulWidget {
   @override
@@ -15,51 +16,39 @@ class Movies extends StatefulWidget {
 }
 
 class _MoviesState extends State<Movies> {
-  Map<String, dynamic> popularMoviesList;
-  Map<String, dynamic> movieDetails;
-  Map<String, dynamic> nowPlayingMovies;
-  List<Map> carouselImages = [];
+  ScrollController _controller;
+  bool scrollDetected=false;
+  Timer timer;
 
-  Future getPopularMovies() async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/movie/popular?api_key=5a945992366721e6b76a83e296616bf8&language=en-US&page=1');
-    if (response.statusCode == 200) {
-      popularMoviesList = jsonDecode(response.body);
-    } else {
-      print(response.statusCode);
+  _scrollListener() {
+    if (_controller.offset >= _controller.position.maxScrollExtent &&
+        !_controller.position.outOfRange) {
+      //print("reached bottom");
+      timer = new Timer(const Duration(seconds:1),(){
+        setState(() {
+          pageNumber++;
+        });
+      });
     }
-  }
 
-  Future getMovieDetails(String id) async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/movie/$id?api_key=5a945992366721e6b76a83e296616bf8&language=en-US');
-    if (response.statusCode == 200) {
-      movieDetails = jsonDecode(response.body);
-    } else {
-      print(response.statusCode);
+    if (_controller.offset <= _controller.position.minScrollExtent &&
+        !_controller.position.outOfRange) {
+      setState(() {
+        scrollDetected=false;
+      });
     }
-  }
 
-  Future getNowPlayingMovies() async {
-    http.Response response = await http.get(
-        'https://api.themoviedb.org/3/movie/now_playing?api_key=5a945992366721e6b76a83e296616bf8&language=en-US&page=1&region=us');
-    if (response.statusCode == 200) {
-      nowPlayingMovies = jsonDecode(response.body);
-      carouselImages = [
-        for (var i = 0; i < nowPlayingMovies['results'].length; i++)
-          {
-            'path': '${nowPlayingMovies['results'][i]['poster_path']}',
-            'id': '${nowPlayingMovies['results'][i]['id']}',
-          },
-      ];
-    } else {
-      print(response.statusCode);
+    if (_controller.position.userScrollDirection ==
+        ScrollDirection.reverse){
+      scrollDetected=true;
     }
   }
 
   @override
   void initState() {
     getPopularMovies();
+    _controller = ScrollController();
+    _controller.addListener(_scrollListener);
     super.initState();
   }
 
@@ -72,59 +61,63 @@ class _MoviesState extends State<Movies> {
           padding: const EdgeInsets.only(left: 8.0, right: 8.0),
           child: Column(
             children: [
-              FutureBuilder(
-                  future: getNowPlayingMovies(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.done) {
-                      return CarouselSlider(
-                          options: CarouselOptions(
-                            autoPlay: true,
-                            reverse: true,
-                            enlargeCenterPage: true,
-                            autoPlayInterval: Duration(seconds: 3),
-                            height: 250,
-                          ),
-                          items: carouselImages
-                              .map(
-                                (i) => GestureDetector(
-                                  onTap: () async {
-                                    await getMovieDetails(i['id']);
-                                    Navigator.pushNamed(context, '/about',
-                                        arguments: movieDetails);
-                                  },
-                                  child: Container(
-                                    height: 200.0,
-                                    width: 350.0,
-                                    margin: EdgeInsets.only(
-                                        left: 10.0, right: 10.0, bottom: 30.0),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(20.0),
-                                      child: Image.network(
-                                        'https://image.tmdb.org/t/p/w1280/${i['path']}',
-                                        height: 200.0,
-                                        width: 350.0,
-                                        fit: BoxFit.fill,
-                                      ),
+              Container(
+                child: scrollDetected?Container():
+                FutureBuilder(
+                    future: getNowPlayingMovies(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done) {
+                        return CarouselSlider(
+                            options: CarouselOptions(
+                              autoPlay: true,
+                              reverse: true,
+                              enlargeCenterPage: true,
+                              autoPlayInterval: Duration(seconds: 3),
+                              height: 250,
+                            ),
+                            items: carouselImages
+                                .map(
+                                  (i) => GestureDetector(
+                                onTap: () async {
+                                  await getMovieDetails(i['id']);
+                                  Navigator.pushNamed(context, '/about',
+                                      arguments: movieDetails);
+                                },
+                                child: Container(
+                                  height: 200.0,
+                                  width: 350.0,
+                                  margin: EdgeInsets.only(
+                                      left: 10.0, right: 10.0, bottom: 30.0),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(20.0),
+                                    child: Image.network(
+                                      'https://image.tmdb.org/t/p/w1280/${i['path']}',
+                                      height: 200.0,
+                                      width: 350.0,
+                                      fit: BoxFit.fill,
                                     ),
                                   ),
                                 ),
-                              )
-                              .toList());
-                    }
-                    return Center(
-                      child: SizedBox(
-                        height: 50.0,
-                        width: 50.0,
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  }),
+                              ),
+                            )
+                                .toList());
+                      }
+                      return Center(
+                        child: SizedBox(
+                          height: 100.0,
+                          width: 100.0,
+                          child: Container(),
+                        ),
+                      );
+                    }),
+              ),
               FutureBuilder(
                   future: getPopularMovies(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.done) {
                       return Expanded(
                         child: ListView(
+                          controller: _controller,
                           scrollDirection: Axis.vertical,
                           physics: BouncingScrollPhysics(),
                           children: [
@@ -233,7 +226,7 @@ class _MoviesState extends State<Movies> {
                                             ),
                                           ),
                                           Text(
-                                            '${popularMoviesList['results'][i]['release_date'].toString().substring(0, 4)}',
+                                            '${popularMoviesList['results'][i]['release_date'].toString()}',
                                             style: TextStyle(
                                                 fontSize: 16.0,
                                                 color: Colors.grey,
@@ -251,8 +244,8 @@ class _MoviesState extends State<Movies> {
                     }
                     return Center(
                         child: SizedBox(
-                            height: 100.0,
-                            width: 100.0,
+                            height: 50.0,
+                            width: 50.0,
                             child: CircularProgressIndicator()));
                   })
             ],
