@@ -1,16 +1,22 @@
-# movies_app
+# Movies Cite
 
-A new Flutter application.
+**Screenshot**
 
-## Getting Started
+<p align="center"><img src="screenshots/movies-cite1.jpg" width="25%"/><img src="screenshots/movies-cite2.jpg"  width="25%"/><img src="screenshots/movies-cite3.jpg" width="25%" /></p>
 
-This project is a starting point for a Flutter application.
+**Requirements**
+- Location Access
+- Internet connection
+- Storage requirement < 30mb
 
-A few resources to get you started if this is your first Flutter project:
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+**Highlights**
+- Use [Tmdb] API
+- Beautiful Ui across screens
+- Cross Platform
+- Info about latest movies/tv series
+- Manual search option for actors, movies, cast, tv series
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**Author**
+  <br />
+<a href="https://github.com/vineetk242000" style="text-decoration:none">Vineet Kumar</a>
